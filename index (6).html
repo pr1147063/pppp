@@ -1,0 +1,1179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GitHub Profile Analyzer</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet" />
+  <style>
+    /* ── RESET & TOKENS ───────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #0a0a0f;
+      --surface:  #111118;
+      --card:     #16161f;
+      --border:   #2a2a3a;
+      --accent:   #00ff87;
+      --accent2:  #7c3aed;
+      --text:     #e8e8f0;
+      --muted:    #6b6b80;
+      --danger:   #ff4757;
+      --warn:     #ffa502;
+      --gold:     #ffd700;
+      --radius:   12px;
+      --mono:     'Space Mono', monospace;
+      --sans:     'Syne', sans-serif;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── BACKGROUND GRID ──────────────────────────────────── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0,255,135,.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,255,135,.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── LAYOUT ───────────────────────────────────────────── */
+    .app { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; padding: 0 24px 80px; }
+
+    /* ── HEADER ───────────────────────────────────────────── */
+    header {
+      padding: 48px 0 40px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 48px;
+    }
+
+    .logo-mark {
+      width: 52px; height: 52px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 14px;
+      display: grid; place-items: center;
+      font-size: 26px;
+      flex-shrink: 0;
+      box-shadow: 0 0 30px rgba(0,255,135,.2);
+    }
+
+    header h1 {
+      font-family: var(--sans);
+      font-size: clamp(1.4rem, 3vw, 2rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+
+    header h1 span { color: var(--accent); }
+
+    .header-badge {
+      margin-left: auto;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--accent);
+      border: 1px solid rgba(0,255,135,.3);
+      padding: 4px 10px;
+      border-radius: 99px;
+      white-space: nowrap;
+    }
+
+    /* ── SEARCH BOX ───────────────────────────────────────── */
+    .search-section {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px;
+      margin-bottom: 40px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .search-section::before {
+      content: '';
+      position: absolute;
+      top: -40px; right: -40px;
+      width: 180px; height: 180px;
+      background: radial-gradient(circle, rgba(0,255,135,.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .search-section h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .12em;
+      margin-bottom: 20px;
+    }
+
+    .search-row {
+      display: flex;
+      gap: 12px;
+    }
+
+    .search-input {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 15px;
+      outline: none;
+      transition: border-color .2s, box-shadow .2s;
+    }
+
+    .search-input::placeholder { color: var(--muted); }
+
+    .search-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(0,255,135,.1);
+    }
+
+    .btn {
+      padding: 14px 28px;
+      border: none;
+      border-radius: var(--radius);
+      font-family: var(--sans);
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all .2s;
+      letter-spacing: .04em;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #000;
+    }
+    .btn-primary:hover { background: #00e87a; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,255,135,.3); }
+    .btn-primary:active { transform: translateY(0); }
+    .btn-primary:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+    .btn-ghost:hover { color: var(--text); border-color: var(--text); }
+
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-danger:hover { background: #ff2d3f; }
+
+    /* ── TOAST ────────────────────────────────────────────── */
+    #toast {
+      position: fixed;
+      bottom: 32px; right: 32px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 20px;
+      font-size: 14px;
+      font-family: var(--mono);
+      z-index: 9999;
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all .3s cubic-bezier(.34,1.56,.64,1);
+      max-width: 320px;
+    }
+    #toast.show { transform: translateY(0); opacity: 1; }
+    #toast.success { border-color: var(--accent); color: var(--accent); }
+    #toast.error   { border-color: var(--danger); color: var(--danger); }
+
+    /* ── LOADER ───────────────────────────────────────────── */
+    .loader {
+      display: none;
+      text-align: center;
+      padding: 60px 0;
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 13px;
+    }
+    .loader.active { display: block; }
+
+    .spinner {
+      width: 44px; height: 44px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+      margin: 0 auto 16px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── PROFILE CARD ─────────────────────────────────────── */
+    .profile-card {
+      display: none;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      overflow: hidden;
+      margin-bottom: 40px;
+      animation: slideUp .4s ease;
+    }
+    .profile-card.visible { display: block; }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .profile-hero {
+      background: linear-gradient(135deg, #0f0f1a 0%, #1a0f2e 50%, #0f1a0f 100%);
+      padding: 36px;
+      display: flex;
+      gap: 28px;
+      align-items: flex-start;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .profile-hero::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at top right, rgba(124,58,237,.12), transparent 60%);
+      pointer-events: none;
+    }
+
+    .avatar-wrap {
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .avatar {
+      width: 96px; height: 96px;
+      border-radius: 50%;
+      border: 3px solid var(--accent);
+      object-fit: cover;
+      display: block;
+      box-shadow: 0 0 30px rgba(0,255,135,.2);
+    }
+
+    .grade-badge {
+      position: absolute;
+      bottom: -4px; right: -4px;
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      display: grid; place-items: center;
+      font-family: var(--mono);
+      font-weight: 700;
+      font-size: 13px;
+      border: 2px solid var(--bg);
+    }
+
+    .grade-S { background: var(--gold); color: #000; }
+    .grade-A { background: var(--accent); color: #000; }
+    .grade-B { background: #00bfff; color: #000; }
+    .grade-C { background: var(--warn); color: #000; }
+    .grade-D { background: var(--danger); color: #fff; }
+
+    .profile-info { flex: 1; min-width: 0; }
+
+    .profile-name {
+      font-size: 1.6rem;
+      font-weight: 800;
+      letter-spacing: -.03em;
+      margin-bottom: 4px;
+    }
+
+    .profile-login {
+      font-family: var(--mono);
+      color: var(--accent);
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+
+    .profile-bio {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.6;
+      margin-bottom: 14px;
+    }
+
+    .profile-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .meta-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: var(--muted);
+      font-family: var(--mono);
+    }
+
+    .meta-item span { font-size: 15px; }
+
+    /* ── SCORE BAR ────────────────────────────────────────── */
+    .score-section {
+      padding: 24px 36px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .score-label {
+      font-size: 12px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      font-family: var(--mono);
+      white-space: nowrap;
+    }
+
+    .score-bar-wrap { flex: 1; }
+
+    .score-bar {
+      height: 8px;
+      background: var(--border);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .score-fill {
+      height: 100%;
+      border-radius: 99px;
+      background: linear-gradient(90deg, var(--accent2), var(--accent));
+      transition: width 1s cubic-bezier(.34,1.56,.64,1);
+    }
+
+    .score-num {
+      font-family: var(--mono);
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--accent);
+      white-space: nowrap;
+    }
+
+    /* ── STATS GRID ───────────────────────────────────────── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 1px;
+      background: var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .stat-cell {
+      background: var(--card);
+      padding: 24px 20px;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-family: var(--mono);
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--text);
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    /* ── INSIGHTS SECTION ─────────────────────────────────── */
+    .insights {
+      padding: 32px 36px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+    }
+
+    @media (max-width: 640px) {
+      .insights { grid-template-columns: 1fr; }
+      .profile-hero { flex-direction: column; }
+      .search-row { flex-direction: column; }
+      .score-section { flex-wrap: wrap; }
+    }
+
+    .insight-block h3 {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .12em;
+      color: var(--muted);
+      margin-bottom: 16px;
+      font-family: var(--mono);
+    }
+
+    /* Language bars */
+    .lang-bar { margin-bottom: 10px; }
+
+    .lang-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      margin-bottom: 5px;
+      font-family: var(--mono);
+    }
+
+    .lang-name { color: var(--text); }
+    .lang-pct  { color: var(--muted); }
+
+    .lang-track {
+      height: 5px;
+      background: var(--border);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .lang-fill {
+      height: 100%;
+      border-radius: 99px;
+      background: linear-gradient(90deg, var(--accent2), var(--accent));
+    }
+
+    /* Spotlight repos */
+    .repo-chip {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--accent);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .readme-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 99px;
+      font-size: 13px;
+      font-family: var(--mono);
+    }
+
+    .readme-yes { background: rgba(0,255,135,.1); color: var(--accent); border: 1px solid rgba(0,255,135,.2); }
+    .readme-no  { background: rgba(107,107,128,.1); color: var(--muted); border: 1px solid var(--border); }
+
+    /* ── PROFILE LIST ─────────────────────────────────────── */
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .section-title {
+      font-size: 1rem;
+      font-weight: 800;
+      letter-spacing: -.02em;
+    }
+
+    .section-title span { color: var(--accent); font-family: var(--mono); }
+
+    .profiles-list { display: flex; flex-direction: column; gap: 12px; }
+
+    .profile-row {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      cursor: pointer;
+      transition: border-color .2s, transform .15s;
+    }
+
+    .profile-row:hover {
+      border-color: rgba(0,255,135,.3);
+      transform: translateX(4px);
+    }
+
+    .row-avatar {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+
+    .row-info { flex: 1; min-width: 0; }
+
+    .row-name {
+      font-weight: 700;
+      font-size: 15px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .row-sub {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .row-stats {
+      display: flex;
+      gap: 16px;
+      text-align: right;
+    }
+
+    .row-stat { font-family: var(--mono); font-size: 13px; }
+    .row-stat b { color: var(--text); display: block; font-size: 15px; }
+    .row-stat small { color: var(--muted); font-size: 11px; }
+
+    .row-grade {
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      display: grid; place-items: center;
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .row-del {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      border-radius: 8px;
+      width: 32px; height: 32px;
+      cursor: pointer;
+      font-size: 16px;
+      display: grid; place-items: center;
+      flex-shrink: 0;
+      transition: all .2s;
+    }
+    .row-del:hover { background: rgba(255,71,87,.1); border-color: var(--danger); color: var(--danger); }
+
+    /* ── EMPTY STATE ──────────────────────────────────────── */
+    .empty {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 14px;
+    }
+
+    .empty-icon { font-size: 48px; margin-bottom: 16px; opacity: .5; }
+
+    /* ── TABS ─────────────────────────────────────────────── */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 4px;
+      margin-bottom: 32px;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 10px;
+      text-align: center;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--muted);
+      transition: all .2s;
+      border: none;
+      background: transparent;
+      font-family: var(--sans);
+    }
+
+    .tab.active {
+      background: var(--card);
+      color: var(--text);
+      box-shadow: 0 1px 4px rgba(0,0,0,.4);
+    }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── STATS PANEL ──────────────────────────────────────── */
+    .global-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .gstat-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+    }
+
+    .gstat-val {
+      font-family: var(--mono);
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .gstat-lbl {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 4px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    /* grade dist bar */
+    .grade-dist {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+    }
+
+    .grade-dist h3 {
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      font-family: var(--mono);
+      margin-bottom: 20px;
+    }
+
+    .grade-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+      font-family: var(--mono);
+      font-size: 13px;
+    }
+
+    .grade-lbl { width: 20px; font-weight: 700; }
+    .grade-track { flex: 1; height: 8px; background: var(--border); border-radius: 99px; overflow: hidden; }
+    .grade-bar   { height: 100%; border-radius: 99px; transition: width .8s ease; }
+    .grade-cnt   { width: 30px; text-align: right; color: var(--muted); }
+
+    .g-S .grade-lbl, .g-S .grade-bar { color: var(--gold);    background: var(--gold); }
+    .g-A .grade-lbl, .g-A .grade-bar { color: var(--accent);  background: var(--accent); }
+    .g-B .grade-lbl, .g-B .grade-bar { color: #00bfff;        background: #00bfff; }
+    .g-C .grade-lbl, .g-C .grade-bar { color: var(--warn);    background: var(--warn); }
+    .g-D .grade-lbl, .g-D .grade-bar { color: var(--danger);  background: var(--danger); }
+
+    /* scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--surface); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+  </style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- HEADER -->
+  <header>
+    <div class="logo-mark">🔍</div>
+    <div>
+      <h1>GitHub Profile <span>Analyzer</span></h1>
+    </div>
+    <div class="header-badge">v1.0 · Live Data</div>
+  </header>
+
+  <!-- SEARCH -->
+  <div class="search-section">
+    <h2>Analyze a GitHub Profile</h2>
+    <div class="search-row">
+      <input class="search-input" id="usernameInput" type="text"
+             placeholder="Enter GitHub username (e.g. torvalds)" autocomplete="off" />
+      <button class="btn btn-primary" id="analyzeBtn" onclick="analyzeProfile()">
+        ⚡ Analyze
+      </button>
+      <button class="btn btn-ghost" onclick="clearProfile()">Clear</button>
+    </div>
+  </div>
+
+  <!-- LOADER -->
+  <div class="loader" id="loader">
+    <div class="spinner"></div>
+    <div id="loaderMsg">Fetching GitHub data…</div>
+  </div>
+
+  <!-- PROFILE CARD -->
+  <div class="profile-card" id="profileCard">
+
+    <div class="profile-hero">
+      <div class="avatar-wrap">
+        <img class="avatar" id="pAvatar" src="" alt="avatar" />
+        <div class="grade-badge" id="pGradeBadge"></div>
+      </div>
+      <div class="profile-info">
+        <div class="profile-name" id="pName"></div>
+        <div class="profile-login" id="pLogin"></div>
+        <div class="profile-bio" id="pBio"></div>
+        <div class="profile-meta" id="pMeta"></div>
+      </div>
+    </div>
+
+    <div class="score-section">
+      <div class="score-label">Profile Score</div>
+      <div class="score-bar-wrap">
+        <div class="score-bar"><div class="score-fill" id="pScoreFill" style="width:0%"></div></div>
+      </div>
+      <div class="score-num" id="pScoreNum">0/100</div>
+    </div>
+
+    <div class="stats-grid" id="pStatsGrid"></div>
+
+    <div class="insights" id="pInsights"></div>
+
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('list',this)">📋 Stored Profiles</button>
+    <button class="tab" onclick="switchTab('stats',this)">📊 Global Stats</button>
+  </div>
+
+  <!-- LIST TAB -->
+  <div class="tab-panel active" id="tab-list">
+    <div class="section-header">
+      <div class="section-title">All Analyzed Profiles <span id="totalCount">(0)</span></div>
+      <button class="btn btn-ghost" onclick="loadProfiles()" style="font-size:12px;padding:8px 16px;">↻ Refresh</button>
+    </div>
+    <div class="profiles-list" id="profilesList"></div>
+  </div>
+
+  <!-- STATS TAB -->
+  <div class="tab-panel" id="tab-stats">
+    <div class="global-stats" id="globalStats"></div>
+    <div class="grade-dist">
+      <h3>Grade Distribution</h3>
+      <div id="gradeDist"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- ════════════════════════════════════════════════════════════
+     EMBEDDED BACKEND LOGIC
+     All GitHub API calls, data processing, and localStorage
+     persistence happen right here in the browser.
+     ════════════════════════════════════════════════════════════ -->
+<script>
+// ─── STORAGE (replaces MySQL for HTML-only mode) ─────────────
+const DB = {
+  get: () => JSON.parse(localStorage.getItem('gh_profiles') || '{}'),
+  set: (data) => localStorage.setItem('gh_profiles', JSON.stringify(data)),
+  upsert(username, profile) {
+    const db = this.get();
+    db[username.toLowerCase()] = { ...profile, analyzed_at: new Date().toISOString() };
+    this.set(db);
+  },
+  remove(username) {
+    const db = this.get();
+    delete db[username.toLowerCase()];
+    this.set(db);
+  },
+  all() {
+    return Object.values(this.get()).sort(
+      (a,b) => new Date(b.analyzed_at) - new Date(a.analyzed_at)
+    );
+  },
+};
+
+// ─── GITHUB API ───────────────────────────────────────────────
+const GH = 'https://api.github.com';
+
+async function ghFetch(path) {
+  const res = await fetch(GH + path, {
+    headers: { Accept: 'application/vnd.github+json' }
+  });
+  if (!res.ok) throw Object.assign(new Error('GitHub error'), { status: res.status });
+  return res.json();
+}
+
+async function fetchUser(u)  { return ghFetch(`/users/${u}`); }
+async function fetchRepos(u) {
+  let all = [], page = 1;
+  while (true) {
+    const data = await ghFetch(`/users/${u}/repos?per_page=100&page=${page}&sort=updated&type=owner`);
+    all.push(...data);
+    if (data.length < 100 || page >= 10) break;
+    page++;
+  }
+  return all;
+}
+async function hasReadme(u) {
+  try { await ghFetch(`/repos/${u}/${u}/readme`); return true; } catch { return false; }
+}
+
+// ─── INSIGHTS ENGINE ──────────────────────────────────────────
+function computeInsights(user, repos, readme) {
+  const totalStars      = repos.reduce((s,r) => s + r.stargazers_count, 0);
+  const totalForks      = repos.reduce((s,r) => s + r.forks_count, 0);
+  const totalWatchers   = repos.reduce((s,r) => s + r.watchers_count, 0);
+  const totalOpenIssues = repos.reduce((s,r) => s + r.open_issues_count, 0);
+  const avgStars        = repos.length ? +(totalStars/repos.length).toFixed(2) : 0;
+
+  const byStars = [...repos].sort((a,b) => b.stargazers_count - a.stargazers_count);
+  const byForks = [...repos].sort((a,b) => b.forks_count - a.forks_count);
+
+  const langCount = {};
+  repos.filter(r=>!r.fork).forEach(r => {
+    if (r.language) langCount[r.language] = (langCount[r.language]||0)+1;
+  });
+  const total = Object.values(langCount).reduce((s,c)=>s+c,0);
+  const topLanguages = Object.entries(langCount)
+    .sort((a,b)=>b[1]-a[1]).slice(0,8)
+    .map(([language,repo_count]) => ({
+      language, repo_count,
+      percentage: total ? +((repo_count/total)*100).toFixed(1) : 0
+    }));
+
+  let score = 0;
+  score += Math.min(user.followers/10, 20);
+  score += Math.min(totalStars/20, 20);
+  score += Math.min(user.public_repos/5, 15);
+  score += Math.min(totalForks/10, 10);
+  score += user.bio               ? 5 : 0;
+  score += user.blog              ? 5 : 0;
+  score += user.location          ? 3 : 0;
+  score += user.email             ? 3 : 0;
+  score += readme                 ? 7 : 0;
+  score += user.twitter_username  ? 2 : 0;
+  score += Math.min(user.public_gists/2, 5);
+  score = Math.round(Math.min(score, 100));
+
+  const grade = score>=80?'S': score>=60?'A': score>=40?'B': score>=20?'C':'D';
+
+  return {
+    username: user.login, github_id: user.id,
+    name: user.name, bio: user.bio,
+    avatar_url: user.avatar_url, github_url: user.html_url,
+    blog: user.blog||null, location: user.location||null,
+    company: user.company||null, email: user.email||null,
+    twitter_username: user.twitter_username||null,
+    account_type: user.type, is_hireable: !!user.hireable,
+    public_repos: user.public_repos, public_gists: user.public_gists,
+    followers: user.followers, following: user.following,
+    total_stars: totalStars, total_forks: totalForks,
+    total_watchers: totalWatchers, total_open_issues: totalOpenIssues,
+    avg_stars_per_repo: avgStars, top_languages: topLanguages,
+    most_starred_repo: byStars[0]?.full_name||null,
+    most_forked_repo:  byForks[0]?.full_name||null,
+    has_readme_profile: readme,
+    profile_score: score, profile_grade: grade,
+    github_created_at: user.created_at,
+    github_updated_at: user.updated_at,
+  };
+}
+
+// ─── ANALYZE (main action) ────────────────────────────────────
+let currentProfile = null;
+
+async function analyzeProfile() {
+  const username = document.getElementById('usernameInput').value.trim();
+  if (!username) return toast('Enter a GitHub username', 'error');
+  if (!/^[a-zA-Z0-9]([a-zA-Z0-9-]{0,37}[a-zA-Z0-9])?$/.test(username))
+    return toast('Invalid username format', 'error');
+
+  setLoading(true, 'Fetching GitHub profile…');
+
+  try {
+    setLoading(true, 'Fetching repos (may take a moment)…');
+    const [user, repos, readme] = await Promise.all([
+      fetchUser(username),
+      fetchRepos(username),
+      hasReadme(username),
+    ]);
+
+    setLoading(true, 'Computing insights…');
+    const profile = computeInsights(user, repos, readme);
+    DB.upsert(username, profile);
+
+    currentProfile = profile;
+    renderProfile(profile);
+    loadProfiles();
+    toast(`✅ ${username} analyzed!`, 'success');
+  } catch(err) {
+    if (err.status === 404) toast(`User "${username}" not found on GitHub`, 'error');
+    else if (err.status === 403) toast('GitHub rate limit hit. Wait a minute and retry.', 'error');
+    else toast('Something went wrong: ' + err.message, 'error');
+  } finally {
+    setLoading(false);
+  }
+}
+
+document.getElementById('usernameInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') analyzeProfile();
+});
+
+// ─── RENDER PROFILE CARD ──────────────────────────────────────
+function renderProfile(p) {
+  document.getElementById('pAvatar').src = p.avatar_url;
+  document.getElementById('pName').textContent  = p.name || p.username;
+  document.getElementById('pLogin').textContent = '@' + p.username;
+  document.getElementById('pBio').textContent   = p.bio || 'No bio provided';
+
+  const badge = document.getElementById('pGradeBadge');
+  badge.textContent  = p.profile_grade;
+  badge.className    = `grade-badge grade-${p.profile_grade}`;
+
+  // meta
+  const meta = [];
+  if (p.location)         meta.push(`<div class="meta-item"><span>📍</span>${p.location}</div>`);
+  if (p.company)          meta.push(`<div class="meta-item"><span>🏢</span>${p.company}</div>`);
+  if (p.blog)             meta.push(`<div class="meta-item"><span>🔗</span><a href="${p.blog}" target="_blank" style="color:var(--accent)">${p.blog}</a></div>`);
+  if (p.twitter_username) meta.push(`<div class="meta-item"><span>🐦</span>@${p.twitter_username}</div>`);
+  if (p.email)            meta.push(`<div class="meta-item"><span>✉️</span>${p.email}</div>`);
+  document.getElementById('pMeta').innerHTML = meta.join('') || '<div class="meta-item" style="color:var(--muted)">No additional info</div>';
+
+  // score bar (animate after small delay)
+  const fill = document.getElementById('pScoreFill');
+  document.getElementById('pScoreNum').textContent = `${p.profile_score}/100`;
+  fill.style.width = '0%';
+  requestAnimationFrame(() => setTimeout(() => fill.style.width = p.profile_score + '%', 50));
+
+  // stats grid
+  const stats = [
+    { v: fmt(p.public_repos),   l: 'Repos'        },
+    { v: fmt(p.followers),      l: 'Followers'     },
+    { v: fmt(p.following),      l: 'Following'     },
+    { v: fmt(p.total_stars),    l: 'Total Stars'   },
+    { v: fmt(p.total_forks),    l: 'Total Forks'   },
+    { v: fmt(p.public_gists),   l: 'Gists'         },
+    { v: p.avg_stars_per_repo,  l: 'Avg Stars/Repo'},
+    { v: fmt(p.total_open_issues), l: 'Open Issues'},
+  ];
+  document.getElementById('pStatsGrid').innerHTML = stats.map(s =>
+    `<div class="stat-cell">
+       <span class="stat-value">${s.v}</span>
+       <div class="stat-label">${s.l}</div>
+     </div>`
+  ).join('');
+
+  // insights
+  const langs = p.top_languages || [];
+  const langsHTML = langs.length
+    ? langs.map(l =>
+        `<div class="lang-bar">
+           <div class="lang-row">
+             <span class="lang-name">${l.language}</span>
+             <span class="lang-pct">${l.percentage}% · ${l.repo_count} repo${l.repo_count>1?'s':''}</span>
+           </div>
+           <div class="lang-track">
+             <div class="lang-fill" style="width:${l.percentage}%"></div>
+           </div>
+         </div>`
+      ).join('')
+    : '<div style="color:var(--muted);font-family:var(--mono);font-size:13px">No language data</div>';
+
+  const readmePill = p.has_readme_profile
+    ? `<div class="readme-pill readme-yes">✅ Profile README exists</div>`
+    : `<div class="readme-pill readme-no">⬜ No profile README</div>`;
+
+  const starredRepo = p.most_starred_repo
+    ? `<div class="repo-chip">⭐ <a href="https://github.com/${p.most_starred_repo}" target="_blank" style="color:var(--accent);text-decoration:none">${p.most_starred_repo}</a></div>`
+    : '';
+  const forkedRepo = p.most_forked_repo
+    ? `<div class="repo-chip">🍴 <a href="https://github.com/${p.most_forked_repo}" target="_blank" style="color:var(--accent);text-decoration:none">${p.most_forked_repo}</a></div>`
+    : '';
+
+  document.getElementById('pInsights').innerHTML = `
+    <div class="insight-block">
+      <h3>Top Languages</h3>
+      ${langsHTML}
+    </div>
+    <div class="insight-block">
+      <h3>Spotlight Repos</h3>
+      ${starredRepo}${forkedRepo}
+      <h3 style="margin-top:20px">Profile README</h3>
+      ${readmePill}
+      <h3 style="margin-top:20px">Account Info</h3>
+      <div style="font-family:var(--mono);font-size:12px;color:var(--muted);line-height:2">
+        Created: ${new Date(p.github_created_at).toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'})}<br>
+        Type: ${p.account_type} ${p.is_hireable ? '· <span style="color:var(--accent)">Hireable</span>' : ''}<br>
+        <a href="${p.github_url}" target="_blank" style="color:var(--accent)">View on GitHub ↗</a>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('profileCard').classList.add('visible');
+}
+
+// ─── LIST PROFILES ────────────────────────────────────────────
+function loadProfiles() {
+  const profiles = DB.all();
+  document.getElementById('totalCount').textContent = `(${profiles.length})`;
+
+  const list = document.getElementById('profilesList');
+  if (!profiles.length) {
+    list.innerHTML = `<div class="empty"><div class="empty-icon">🔍</div>No profiles analyzed yet.<br>Search for a GitHub username above!</div>`;
+    return;
+  }
+
+  list.innerHTML = profiles.map(p => `
+    <div class="profile-row" onclick="showStored('${p.username}')">
+      <img class="row-avatar" src="${p.avatar_url}" alt="${p.username}" />
+      <div class="row-info">
+        <div class="row-name">
+          ${p.name || p.username}
+          <div class="row-grade grade-${p.profile_grade}">${p.profile_grade}</div>
+        </div>
+        <div class="row-sub">@${p.username} · analyzed ${timeAgo(p.analyzed_at)}</div>
+      </div>
+      <div class="row-stats">
+        <div class="row-stat"><b>${fmt(p.followers)}</b><small>followers</small></div>
+        <div class="row-stat"><b>${fmt(p.total_stars)}</b><small>stars</small></div>
+        <div class="row-stat"><b>${p.profile_score}</b><small>score</small></div>
+      </div>
+      <button class="row-del" onclick="deleteProfile(event,'${p.username}')" title="Remove">✕</button>
+    </div>
+  `).join('');
+}
+
+function showStored(username) {
+  const db = DB.get();
+  const p  = db[username.toLowerCase()];
+  if (!p) return;
+  document.getElementById('usernameInput').value = username;
+  renderProfile(p);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function deleteProfile(e, username) {
+  e.stopPropagation();
+  DB.remove(username);
+  loadProfiles();
+  if (currentProfile?.username?.toLowerCase() === username.toLowerCase()) {
+    clearProfile();
+  }
+  toast(`Deleted @${username}`, 'success');
+}
+
+// ─── GLOBAL STATS ─────────────────────────────────────────────
+function loadStats() {
+  const profiles = DB.all();
+  const total = profiles.length;
+
+  const avgScore   = total ? Math.round(profiles.reduce((s,p)=>s+p.profile_score,0)/total) : 0;
+  const maxFollowers = total ? Math.max(...profiles.map(p=>p.followers)) : 0;
+  const totalStars = profiles.reduce((s,p)=>s+(p.total_stars||0),0);
+
+  document.getElementById('globalStats').innerHTML = [
+    { v: total,             l: 'Profiles Analyzed' },
+    { v: avgScore,          l: 'Avg Profile Score'  },
+    { v: fmt(maxFollowers), l: 'Max Followers'       },
+    { v: fmt(totalStars),   l: 'Combined Stars'      },
+  ].map(s => `
+    <div class="gstat-card">
+      <div class="gstat-val">${s.v}</div>
+      <div class="gstat-lbl">${s.l}</div>
+    </div>
+  `).join('');
+
+  // grade distribution
+  const dist = { S:0, A:0, B:0, C:0, D:0 };
+  profiles.forEach(p => dist[p.profile_grade]++);
+  const maxCount = Math.max(...Object.values(dist), 1);
+
+  document.getElementById('gradeDist').innerHTML = Object.entries(dist).map(([g,c]) => `
+    <div class="grade-row g-${g}">
+      <div class="grade-lbl">${g}</div>
+      <div class="grade-track">
+        <div class="grade-bar" style="width:${(c/maxCount)*100}%"></div>
+      </div>
+      <div class="grade-cnt">${c}</div>
+    </div>
+  `).join('');
+}
+
+// ─── TABS ─────────────────────────────────────────────────────
+function switchTab(name, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+  if (name === 'stats') loadStats();
+}
+
+// ─── HELPERS ──────────────────────────────────────────────────
+function clearProfile() {
+  document.getElementById('profileCard').classList.remove('visible');
+  document.getElementById('usernameInput').value = '';
+  currentProfile = null;
+}
+
+function setLoading(on, msg='Loading…') {
+  const loader = document.getElementById('loader');
+  const btn    = document.getElementById('analyzeBtn');
+  loader.classList.toggle('active', on);
+  document.getElementById('loaderMsg').textContent = msg;
+  btn.disabled = on;
+  btn.textContent = on ? '⏳ Analyzing…' : '⚡ Analyze';
+  if (on) document.getElementById('profileCard').classList.remove('visible');
+}
+
+function fmt(n) {
+  if (n >= 1_000_000) return (n/1_000_000).toFixed(1)+'M';
+  if (n >= 1_000)     return (n/1_000).toFixed(1)+'k';
+  return String(n||0);
+}
+
+function timeAgo(iso) {
+  const secs = Math.floor((Date.now() - new Date(iso))/1000);
+  if (secs < 60)   return 'just now';
+  if (secs < 3600) return Math.floor(secs/60)+'m ago';
+  if (secs < 86400)return Math.floor(secs/3600)+'h ago';
+  return Math.floor(secs/86400)+'d ago';
+}
+
+let toastTimer;
+function toast(msg, type='success') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className   = `show ${type}`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.className='', 3000);
+}
+
+// ─── INIT ─────────────────────────────────────────────────────
+loadProfiles();
+</script>
+
+</body>
+</html>
